@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cute">
+<title>มีอะไรจะให้ดู ✨</title>
+<meta name="theme-color" content="#070b1f">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌙</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Mali:wght@400;600&family=Charm:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --sky1: #070b1f; --sky2: #1a1446; --sky3: #3b2466;
+    --gold: #ffd98a; --text: #f4f1ff; --muted: #b9b3da; --pink: #ff9fc6;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; overflow: hidden; }
+  body {
+    font-family: "Mali", sans-serif; color: var(--text);
+    background: radial-gradient(ellipse at 50% 120%, var(--sky3), var(--sky2) 45%, var(--sky1) 80%);
+    user-select: none;
+  }
+  canvas { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  #fx { z-index: 5; }
+
+  .scene {
+    position: fixed; inset: 0; z-index: 2;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 24px 20px; text-align: center; gap: 18px;
+    opacity: 0; visibility: hidden; transition: opacity .9s ease, visibility .9s;
+  }
+  .scene.active { opacity: 1; visibility: visible; }
+
+  h1, h2 { font-family: "Charm", cursive; font-weight: 700; line-height: 1.25; }
+  h1 { font-size: clamp(2.4rem, 11vw, 4rem); color: var(--gold); text-shadow: 0 0 24px rgba(255,217,138,.55); }
+  h2 { font-size: clamp(1.8rem, 8vw, 2.6rem); color: var(--gold); }
+  p { font-size: 1.05rem; line-height: 1.7; }
+  .muted { color: var(--muted); font-size: .95rem; }
+
+  .btn {
+    font: inherit; font-size: 1.05rem; color: #1b1440; cursor: pointer;
+    background: linear-gradient(135deg, #ffe7b0, var(--gold));
+    border: 0; border-radius: 999px; padding: 12px 28px;
+    box-shadow: 0 6px 24px rgba(255,217,138,.35);
+    transition: transform .15s;
+  }
+  .btn:active { transform: scale(.95); }
+  .tap-hint { position: absolute; bottom: calc(28px + env(safe-area-inset-bottom)); color: var(--muted); font-size: .9rem; animation: pulse 2s infinite; }
+  @keyframes pulse { 50% { opacity: .35; } }
+
+  .fade-in > * { opacity: 0; transform: translateY(14px); }
+  .active.fade-in > * { animation: rise 1s ease forwards; }
+  .active.fade-in > *:nth-child(2) { animation-delay: .6s; }
+  .active.fade-in > *:nth-child(3) { animation-delay: 1.4s; }
+  .active.fade-in > *:nth-child(4) { animation-delay: 2.4s; }
+  @keyframes rise { to { opacity: 1; transform: none; } }
+
+  /* ---------- รหัส ---------- */
+  .moon { font-size: 4rem; filter: drop-shadow(0 0 20px rgba(255,217,138,.6)); animation: float 4s ease-in-out infinite; }
+  @keyframes float { 50% { transform: translateY(-10px); } }
+  .lock-box { display: flex; flex-direction: column; gap: 14px; align-items: center; width: min(320px, 100%); }
+  #pw {
+    width: 100%; font: inherit; font-size: 1.6rem; text-align: center; letter-spacing: .2em;
+    color: var(--text); background: rgba(255,255,255,.08);
+    border: 1px solid rgba(255,255,255,.25); border-radius: 16px; padding: 12px;
+    outline: none;
+  }
+  #pw:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(255,217,138,.2); }
+  .shake { animation: shake .45s; }
+  @keyframes shake { 20%,60% { transform: translateX(-10px); } 40%,80% { transform: translateX(10px); } }
+  #pwMsg { min-height: 1.5em; color: var(--pink); font-size: .95rem; }
+
+  /* ---------- รูป ---------- */
+  .polaroid {
+    background: #fbf8f1; padding: 12px 12px 18px; border-radius: 6px;
+    width: min(78vw, 340px); box-shadow: 0 18px 50px rgba(0,0,0,.5);
+    transform: rotate(-2deg); transition: transform .5s, opacity .5s;
+  }
+  .polaroid.swap { opacity: 0; transform: rotate(6deg) translateX(40px) scale(.94); }
+  .polaroid .img {
+    width: 100%; aspect-ratio: 1/1; background: #2a2150 center/cover no-repeat;
+    display: flex; align-items: center; justify-content: center; font-size: 3rem; border-radius: 3px;
+  }
+  .polaroid .cap { font-family: "Charm", cursive; font-size: 1.45rem; color: #3a2d5c; margin-top: 12px; min-height: 1.4em; }
+  .dots { display: flex; gap: 8px; }
+  .dots i { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,.25); transition: background .3s; }
+  .dots i.on { background: var(--gold); }
+
+  /* ---------- จดหมาย ---------- */
+  .letter {
+    width: min(88vw, 420px); max-height: 70vh; overflow-y: auto; text-align: left;
+    background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.18);
+    backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+    border-radius: 20px; padding: 26px 24px;
+  }
+  .letter h2 { margin-bottom: 12px; }
+  #letterBody p { margin-bottom: 10px; white-space: pre-wrap; }
+  #letterSign { text-align: right; font-family: "Charm", cursive; font-size: 1.5rem; color: var(--gold); margin-top: 8px; opacity: 0; transition: opacity 1s; }
+  .caret::after { content: "|"; animation: pulse 1s infinite; color: var(--gold); }
+  #toCake { opacity: 0; pointer-events: none; transition: opacity .8s; }
+  #toCake.show { opacity: 1; pointer-events: auto; }
+
+  /* ---------- เค้ก ---------- */
+  .cake { position: relative; width: 230px; height: 210px; margin-top: 40px; }
+  .plate { position: absolute; bottom: 0; left: -15px; right: -15px; height: 18px; border-radius: 50%; background: #d9d4ee; }
+  .layer { position: absolute; left: 0; right: 0; border-radius: 14px; }
+  .l1 { bottom: 10px; height: 80px; background: linear-gradient(#f59ac0, #d8739f); }
+  .l2 { bottom: 86px; height: 64px; left: 22px; right: 22px; background: linear-gradient(#fff3e0, #f3d9b6); }
+  .icing { position: absolute; top: -6px; left: -2px; right: -2px; height: 20px; background: #fff; border-radius: 10px; }
+  .l1 .icing { background: #ffe3ef; }
+  .sprinkle { position: absolute; width: 6px; height: 6px; border-radius: 50%; }
+  .candles { position: absolute; bottom: 146px; left: 0; right: 0; display: flex; justify-content: center; gap: 30px; }
+  .candle { position: relative; width: 12px; height: 46px; border-radius: 4px; cursor: pointer;
+    background: repeating-linear-gradient(45deg, #fff 0 6px, #8ec5ff 6px 12px); }
+  .candle::before { content: ""; position: absolute; inset: -30px -22px -4px; } /* พื้นที่แตะใหญ่ขึ้น */
+  .flame {
+    position: absolute; left: 50%; bottom: 100%; width: 14px; height: 24px; margin-left: -7px;
+    background: radial-gradient(circle at 50% 70%, #fff 0 15%, #ffd35c 35%, #ff8a2b 70%, transparent 72%);
+    border-radius: 50% 50% 45% 45% / 60% 60% 40% 40%;
+    filter: drop-shadow(0 0 10px #ffb347); transform-origin: 50% 100%;
+    animation: flicker .18s infinite alternate;
+  }
+  @keyframes flicker { from { transform: scaleY(1) rotate(-2deg); } to { transform: scaleY(1.12) rotate(2deg); } }
+  .candle.out .flame { animation: none; opacity: 0; transform: scale(.2); transition: all .3s; }
+  .smoke { position: absolute; left: 50%; bottom: 100%; width: 8px; height: 8px; margin-left: -4px; border-radius: 50%;
+    background: rgba(220,220,230,.6); opacity: 0; }
+  .candle.out .smoke { animation: smoke 1.6s ease-out forwards; }
+  @keyframes smoke { 0% { opacity: .8; transform: translateY(0) scale(1); } 100% { opacity: 0; transform: translateY(-60px) scale(3); } }
+  #micBtn { font-size: .95rem; padding: 9px 20px; background: rgba(255,255,255,.12); color: var(--text); box-shadow: none; border: 1px solid rgba(255,255,255,.25); }
+  #cakeMsg { min-height: 1.5em; }
+
+  /* ---------- จบ ---------- */
+  #finale h1 { font-size: clamp(2.6rem, 13vw, 4.6rem); }
+  #finalMsg { white-space: pre-line; font-size: 1.15rem; }
+  .age { font-family: "Charm", cursive; font-size: 5rem; color: var(--pink); line-height: 1; text-shadow: 0 0 30px rgba(255,159,198,.6); }
+
+  /* ---------- เพลง ---------- */
+  #musicBtn {
+    position: fixed; top: calc(14px + env(safe-area-inset-top)); right: 14px; z-index: 10;
+    width: 44px; height: 44px; border-radius: 50%; border: 1px solid rgba(255,255,255,.25);
+    background: rgba(255,255,255,.1); color: var(--text); font-size: 1.2rem; cursor: pointer; display: none;
+  }
+  #musicBtn.spin { animation: spin 4s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #ytWrap { position: fixed; left: -9999px; top: 0; width: 200px; height: 200px; }
+  #playPrompt { position: fixed; top: calc(14px + env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); z-index: 10;
+    display: none; font-size: .9rem; padding: 8px 18px; }
+</style>
+</head>
+<body>
+<canvas id="sky"></canvas>
+<canvas id="fx"></canvas>
+
+<!-- 1. รหัส -->
+<section class="scene active" id="lock">
+  <div class="moon">🌙</div>
+  <h2>มีของขวัญรออยู่นะ</h2>
+  <div class="lock-box">
+    <p class="muted" id="hint"></p>
+    <input id="pw" type="text" inputmode="numeric" autocomplete="off" placeholder="• •">
+    <button class="btn" id="unlock">เปิดเลย ✨</button>
+    <div id="pwMsg"></div>
+  </div>
+</section>
+
+<!-- 2. ทักทาย -->
+<section class="scene fade-in" id="hello">
+  <p class="muted">วันนี้เป็นวันพิเศษ...</p>
+  <h1 id="helloName"></h1>
+  <p>เพราะเป็นวันที่ดาวที่สวยที่สุด<br>ได้ตกลงมาบนโลกใบนี้ 🌟</p>
+  <span class="tap-hint">แตะเพื่อไปต่อ</span>
+</section>
+
+<!-- 3. รูป -->
+<section class="scene" id="memories">
+  <h2>ความทรงจำของเรา</h2>
+  <div class="polaroid" id="polaroid"><div class="img" id="pImg"></div><div class="cap" id="pCap"></div></div>
+  <div class="dots" id="dots"></div>
+  <span class="tap-hint" id="memHint">แตะเพื่อดูรูปถัดไป</span>
+</section>
+
+<!-- 4. จดหมาย -->
+<section class="scene" id="letterScene">
+  <div class="letter">
+    <h2 id="letterTo"></h2>
+    <div id="letterBody"></div>
+    <div id="letterSign"></div>
+  </div>
+  <button class="btn" id="toCake">มีอีกอย่างนึง 🎂</button>
+</section>
+
+<!-- 5. เค้ก -->
+<section class="scene" id="cakeScene">
+  <h2>อธิษฐานแล้วเป่าเทียนเลย</h2>
+  <p class="muted" id="cakeMsg">แตะที่เทียนเพื่อเป่า 🕯️</p>
+  <div class="cake">
+    <div class="plate"></div>
+    <div class="layer l1"><div class="icing"></div></div>
+    <div class="layer l2"><div class="icing"></div></div>
+    <div class="candles" id="candles"></div>
+  </div>
+  <button class="btn" id="micBtn">🎤 เป่าใส่ไมค์จริงๆ</button>
+</section>
+
+<!-- 6. จบ -->
+<section class="scene fade-in" id="finale">
+  <h1>Happy Birthday</h1>
+  <div class="age" id="ageNum"></div>
+  <p id="finalMsg"></p>
+  <button class="btn" id="again">ดูพลุอีกรอบ 🎆</button>
+</section>
+
+<button id="musicBtn" aria-label="เปิด/ปิดเพลง">🎵</button>
+<button class="btn" id="playPrompt">🎵 แตะเพื่อเปิดเพลง</button>
+<div id="ytWrap"><div id="yt"></div></div>
+
+<script src="config.js"></script>
+<script>
+const C = window.CONFIG;
+const $ = (id) => document.getElementById(id);
+
+/* ================= ท้องฟ้า ================= */
+const sky = $("sky"), sctx = sky.getContext("2d");
+let W, H, DPR, stars = [], shooting = [];
+function resize() {
+  DPR = Math.min(window.devicePixelRatio || 1, 2);
+  W = innerWidth; H = innerHeight;
+  for (const c of [sky, $("fx")]) { c.width = W * DPR; c.height = H * DPR; c.getContext("2d").setTransform(DPR, 0, 0, DPR, 0, 0); }
+  stars = Array.from({ length: Math.round(W * H / 2500) }, () => ({
+    x: Math.random() * W, y: Math.random() * H, r: Math.random() * 1.4 + .3,
+    p: Math.random() * Math.PI * 2, s: Math.random() * 2 + .5,
+  }));
+}
+addEventListener("resize", resize); resize();
+
+function drawSky(t) {
+  sctx.clearRect(0, 0, W, H);
+  for (const s of stars) {
+    sctx.globalAlpha = .35 + .65 * (0.5 + 0.5 * Math.sin(s.p + t / 1000 * s.s));
+    sctx.fillStyle = "#fff";
+    sctx.beginPath(); sctx.arc(s.x, s.y, s.r, 0, 7); sctx.fill();
+  }
+  if (Math.random() < .006) shooting.push({ x: Math.random() * W, y: Math.random() * H * .4, vx: -6 - Math.random() * 4, vy: 3 + Math.random() * 2, life: 1 });
+  sctx.lineCap = "round";
+  shooting = shooting.filter((m) => {
+    m.x += m.vx; m.y += m.vy; m.life -= .015;
+    const g = sctx.createLinearGradient(m.x, m.y, m.x - m.vx * 12, m.y - m.vy * 12);
+    g.addColorStop(0, `rgba(255,255,255,${m.life})`); g.addColorStop(1, "rgba(255,255,255,0)");
+    sctx.globalAlpha = 1; sctx.strokeStyle = g; sctx.lineWidth = 2;
+    sctx.beginPath(); sctx.moveTo(m.x, m.y); sctx.lineTo(m.x - m.vx * 12, m.y - m.vy * 12); sctx.stroke();
+    return m.life > 0;
+  });
+  sctx.globalAlpha = 1;
+}
+
+/* ================= พลุ ================= */
+const fctx = $("fx").getContext("2d");
+let rockets = [], sparks = [], fireworksUntil = 0;
+const COLORS = ["#ffd98a", "#ff9fc6", "#9fd4ff", "#c9a8ff", "#ffffff", "#8effc1"];
+function launch() {
+  rockets.push({ x: W * (.15 + Math.random() * .7), y: H, vy: -(H / 70 + Math.random() * 3), tx: H * (.15 + Math.random() * .3), c: COLORS[Math.random() * COLORS.length | 0] });
+}
+function burst(x, y, c) {
+  const n = 70;
+  for (let i = 0; i < n; i++) {
+    const a = (i / n) * Math.PI * 2, sp = 2 + Math.random() * 3.5;
+    sparks.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 1, c: Math.random() < .3 ? "#fff" : c });
+  }
+}
+function drawFx(t) {
+  fctx.clearRect(0, 0, W, H);
+  if (t < fireworksUntil && Math.random() < .07) launch();
+  rockets = rockets.filter((r) => {
+    r.y += r.vy; r.vy *= .985;
+    fctx.fillStyle = r.c; fctx.beginPath(); fctx.arc(r.x, r.y, 2.5, 0, 7); fctx.fill();
+    if (r.y <= r.tx || r.vy > -1.5) { burst(r.x, r.y, r.c); return false; }
+    return true;
+  });
+  sparks = sparks.filter((p) => {
+    p.x += p.vx; p.y += p.vy; p.vx *= .97; p.vy = p.vy * .97 + .05; p.life -= .012;
+    fctx.globalAlpha = Math.max(p.life, 0); fctx.fillStyle = p.c;
+    fctx.beginPath(); fctx.arc(p.x, p.y, 2, 0, 7); fctx.fill();
+    return p.life > 0;
+  });
+  fctx.globalAlpha = 1;
+}
+function fireworks(ms) { fireworksUntil = performance.now() + ms; for (let i = 0; i < 4; i++) setTimeout(launch, i * 250); }
+
+(function loop(t) { drawSky(t); drawFx(t); requestAnimationFrame(loop); })(0);
+
+/* ================= ฉาก ================= */
+let current = "lock";
+function go(id) {
+  $(current).classList.remove("active");
+  current = id;
+  $(id).classList.add("active");
+  if (id === "memories") showPhoto(0);
+  if (id === "letterScene") typeLetter();
+}
+
+/* ================= เพลง ================= */
+let audio = null, yt = null, ytReady = false, playing = false;
+if (C.songFile) {
+  audio = new Audio(C.songFile); audio.loop = true;
+} else if (C.youtubeId) {
+  window.onYouTubeIframeAPIReady = () => {
+    yt = new YT.Player("yt", {
+      width: 200, height: 200, videoId: C.youtubeId,
+      playerVars: { start: C.youtubeStart || 0, playsinline: 1, controls: 0, loop: 1, playlist: C.youtubeId },
+      events: {
+        onReady: () => { ytReady = true; },
+        onStateChange: (e) => setPlaying(e.data === YT.PlayerState.PLAYING),
+      },
+    });
+  };
+  const s = document.createElement("script"); s.src = "https://www.youtube.com/iframe_api"; document.head.appendChild(s);
+}
+function setPlaying(v) {
+  playing = v;
+  $("musicBtn").classList.toggle("spin", v);
+  $("musicBtn").textContent = v ? "🎵" : "🔇";
+  if (v) $("playPrompt").style.display = "none";
+}
+function playMusic() {
+  $("musicBtn").style.display = "block";
+  if (audio) { audio.play().then(() => setPlaying(true)).catch(() => showPlayPrompt()); return; }
+  if (yt && ytReady) { yt.unMute(); yt.setVolume(100); yt.playVideo(); }
+  setTimeout(() => { if (!playing) showPlayPrompt(); }, 2500);
+}
+function showPlayPrompt() { if (audio || yt) $("playPrompt").style.display = "block"; }
+function pauseMusic() { if (audio) { audio.pause(); setPlaying(false); } else if (yt) yt.pauseVideo(); }
+$("musicBtn").onclick = (e) => { e.stopPropagation(); playing ? pauseMusic() : playMusic(); };
+$("playPrompt").onclick = (e) => { e.stopPropagation(); playMusic(); };
+
+/* ================= 1. รหัส ================= */
+$("hint").textContent = C.hint;
+const digits = (s) => String(s).replace(/\D/g, "");
+function tryUnlock() {
+  const ok = digits($("pw").value) === digits(C.password);
+  if (ok) {
+    $("pw").blur();
+    playMusic();
+    fireworks(1200);
+    go("hello");
+  } else {
+    const box = $("pw"); box.classList.remove("shake"); void box.offsetWidth; box.classList.add("shake");
+    $("pwMsg").textContent = ["ยังไม่ใช่น้า ลองใหม่ 🥺", "ใกล้แล้วมั้ง 🤏", "คิดดีๆ นะ 😝"][Math.random() * 3 | 0];
+  }
+}
+$("unlock").onclick = tryUnlock;
+$("pw").addEventListener("keydown", (e) => { if (e.key === "Enter") tryUnlock(); });
+
+/* ================= 2. ทักทาย ================= */
+$("helloName").textContent = `สุขสันต์วันเกิด ${C.name}`;
+$("hello").onclick = () => go(photos.length ? "memories" : "letterScene");
+
+/* ================= 3. รูป ================= */
+let photos = [], pIndex = 0;
+// โหลดรูปล่วงหน้า และข้ามรูปที่ไม่มีไฟล์
+Promise.all(C.photos.map((p) => new Promise((res) => {
+  const img = new Image();
+  img.onload = () => res(p); img.onerror = () => res(null);
+  img.src = p.file;
+}))).then((list) => {
+  photos = list.filter(Boolean);
+  $("dots").innerHTML = photos.map(() => "<i></i>").join("");
+});
+function showPhoto(i) {
+  pIndex = i;
+  const card = $("polaroid"), p = photos[i];
+  card.classList.add("swap");
+  setTimeout(() => {
+    $("pImg").style.backgroundImage = `url("${p.file}")`;
+    $("pCap").textContent = p.caption;
+    card.style.transform = `rotate(${(i % 2 ? 2 : -2) + (Math.random() * 2 - 1)}deg)`;
+    card.classList.remove("swap");
+  }, i === 0 ? 0 : 350);
+  [...$("dots").children].forEach((d, k) => d.classList.toggle("on", k === i));
+  $("memHint").textContent = i === photos.length - 1 ? "แตะเพื่อไปต่อ 💌" : "แตะเพื่อดูรูปถัดไป";
+}
+$("memories").onclick = () => pIndex < photos.length - 1 ? showPhoto(pIndex + 1) : go("letterScene");
+
+/* ================= 4. จดหมาย ================= */
+$("letterTo").textContent = C.letterTo;
+$("letterSign").textContent = C.signature ? `— ${C.signature}` : "";
+let typed = false;
+async function typeLetter() {
+  if (typed) return; typed = true;
+  const body = $("letterBody");
+  await wait(900);
+  for (const para of C.letter) {
+    const el = document.createElement("p"); el.className = "caret"; body.appendChild(el);
+    for (const ch of [...para]) {
+      el.textContent += ch;
+      body.parentElement.scrollTop = body.parentElement.scrollHeight;
+      await wait(/[.!?\s]/.test(ch) ? 110 : 65);
+    }
+    el.className = ""; await wait(500);
+  }
+  $("letterSign").style.opacity = 1;
+  await wait(900);
+  $("toCake").classList.add("show");
+}
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+$("toCake").onclick = () => go("cakeScene");
+
+/* ================= 5. เค้ก ================= */
+const CANDLES = 3;
+$("candles").innerHTML = Array.from({ length: CANDLES }, () => '<div class="candle"><div class="flame"></div><div class="smoke"></div></div>').join("");
+// โรยเม็ดสีบนเค้ก
+document.querySelectorAll(".layer").forEach((layer) => {
+  for (let i = 0; i < 14; i++) {
+    const s = document.createElement("span"); s.className = "sprinkle";
+    s.style.left = 6 + Math.random() * 88 + "%"; s.style.top = 30 + Math.random() * 55 + "%";
+    s.style.background = COLORS[Math.random() * COLORS.length | 0];
+    layer.appendChild(s);
+  }
+});
+let blown = 0, done = false;
+function blowOut(c) {
+  if (c.classList.contains("out") || done) return;
+  c.classList.add("out"); blown++;
+  if (blown === CANDLES) celebrate();
+  else $("cakeMsg").textContent = `อีก ${CANDLES - blown} เล่ม 💨`;
+}
+document.querySelectorAll(".candle").forEach((c) => c.addEventListener("click", () => blowOut(c)));
+
+let micStream = null;
+$("micBtn").onclick = async () => {
+  try {
+    micStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: false } });
+  } catch { $("cakeMsg").textContent = "ใช้ไมค์ไม่ได้ แตะที่เทียนแทนนะ 🕯️"; return; }
+  $("micBtn").style.display = "none";
+  $("cakeMsg").textContent = "เป่าเลย! 💨";
+  const ac = new (window.AudioContext || window.webkitAudioContext)();
+  const an = ac.createAnalyser(); an.fftSize = 512;
+  ac.createMediaStreamSource(micStream).connect(an);
+  const data = new Uint8Array(an.frequencyBinCount);
+  let loud = 0;
+  (function listen() {
+    if (done) { micStream.getTracks().forEach((t) => t.stop()); ac.close(); return; }
+    an.getByteFrequencyData(data);
+    // เสียงเป่าลม = พลังงานสูงช่วงความถี่ต่ำ
+    let sum = 0; for (let i = 1; i < 24; i++) sum += data[i];
+    loud = sum / 23 > 170 ? loud + 1 : Math.max(0, loud - 1);
+    if (loud > 12) {
+      loud = 0;
+      const next = [...document.querySelectorAll(".candle:not(.out)")][0];
+      if (next) blowOut(next);
+    }
+    requestAnimationFrame(listen);
+  })();
+};
+
+function celebrate() {
+  done = true;
+  $("cakeMsg").textContent = "เย้! 🎉";
+  fireworks(7000);
+  setTimeout(() => go("finale"), 1600);
+}
+
+/* ================= 6. จบ ================= */
+$("ageNum").textContent = C.age;
+$("finalMsg").textContent = C.finalMessage;
+$("again").onclick = () => fireworks(6000);
+</script>
+</body>
+</html>
