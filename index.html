@@ -214,7 +214,7 @@
 <button class="btn" id="playPrompt">🎵 แตะเพื่อเปิดเพลง</button>
 <div id="ytWrap"><div id="yt"></div></div>
 
-<script src="config.js"></script>
+<script>document.write('<script src="config.js?v=' + Date.now() + '"><\/script>')</script>
 <script>
 const C = window.CONFIG;
 const $ = (id) => document.getElementById(id);
