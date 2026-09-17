@@ -334,7 +334,7 @@ $("playPrompt").onclick = (e) => { e.stopPropagation(); playMusic(); };
 
 /* ================= 1. รหัส ================= */
 $("hint").textContent = C.hint;
-const digits = (s) => String(s).replace(/\D/g, "");
+const digits = (s) => String(s).replace(/[๐-๙]/g, (c) => c.charCodeAt(0) - 0x0E50).replace(/\D/g, "");
 function tryUnlock() {
   const ok = digits($("pw").value) === digits(C.password);
   if (ok) {
