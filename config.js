@@ -15,9 +15,9 @@ window.CONFIG = {
 
   // รูปคู่: วางรูปในโฟลเดอร์ photos แล้วตั้งชื่อตามนี้ (รูปไหนไม่มีจะถูกข้ามไปเอง)
   photos: [
-    { file: "photos/1.jpg", caption: "ความทรงจำแรกของเรา" },
-    { file: "photos/2.jpg", caption: "วันนั้นหัวเราะกันไม่หยุด" },
-    { file: "photos/3.jpg", caption: "ที่ไหนก็ได้ ขอแค่มีเธอ" },
+    { file: "photos/1.jpg", caption: "แว่นน่ารัก" },
+    { file: "photos/2.jpg", caption: "คนนี้ก็น่ารัก" },
+    { file: "photos/3.jpg", caption: "นี้ก็สวย///" },
     { file: "photos/4.jpg", caption: "อีกหนึ่งวันที่อยากจำไปนานๆ" },
     { file: "photos/5.jpg", caption: "และจะมีอีกหลายวันแบบนี้" },
   ],
